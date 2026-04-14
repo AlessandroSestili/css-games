@@ -6,30 +6,27 @@
   <title>Memory Glitch — CSS Games</title>
   <link rel="stylesheet" href="../../assets/style.css">
   <style>
-    body { display: flex; flex-direction: column; align-items: center; padding: 4rem 1rem 3rem; }
+    body { display:flex; flex-direction:column; align-items:center; padding:4rem 1rem 3rem; }
 
-    header { text-align: center; margin-bottom: 2rem; }
+    header { text-align:center; margin-bottom:2rem; }
     header a { font-family:'JetBrains Mono',monospace; font-size:.75rem; color:var(--muted); text-decoration:none; display:inline-block; margin-bottom:1rem; transition:color .2s; }
     header a:hover { color:var(--text); }
     header h1 { font-size:clamp(2rem,5vw,3rem); font-weight:900; margin-top:.4rem; }
     header p  { color:var(--muted); font-size:.8rem; margin-top:.4rem; font-family:'JetBrains Mono',monospace; }
 
-    .stats { display:flex; gap:1rem; margin-bottom:1.75rem; }
+    .stats { display:flex; gap:1rem; margin-bottom:1.75rem; flex-wrap:wrap; justify-content:center; }
 
     #board {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 1rem;
-      width: 100%;
-      max-width: 600px;
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:1rem;
+      width:100%;
+      max-width:600px;
     }
 
-    .card-wrap {
-      aspect-ratio: 1;
-      perspective: 800px;
-      cursor: not-allowed;
-    }
-    .card-wrap.ready { cursor: pointer; }
+    /* ── Cards ── */
+    .card-wrap { aspect-ratio:1; perspective:800px; cursor:not-allowed; }
+    .card-wrap.ready { cursor:pointer; }
 
     .card-inner {
       width:100%; height:100%;
@@ -49,33 +46,11 @@
       font-size:clamp(2rem,5.5vw,2.6rem);
       border:1px solid rgba(255,255,255,.07);
     }
-
-    .card-back {
-      background:linear-gradient(135deg,rgba(124,58,237,.18),rgba(6,182,212,.10));
-    }
-    .card-back::after {
-      content:'?';
-      font-family:'JetBrains Mono',monospace;
-      font-size:1.6rem; font-weight:900;
-      color:rgba(124,58,237,.5);
-    }
-
-    .card-front {
-      background:linear-gradient(135deg,rgba(124,58,237,.25),rgba(6,182,212,.15));
-      transform:rotateY(180deg);
-      border-color:rgba(124,58,237,.35);
-    }
-
-    .card-wrap.matched .card-front {
-      background:linear-gradient(135deg,rgba(16,185,129,.25),rgba(6,182,212,.15));
-      border-color:rgba(16,185,129,.45);
-      box-shadow:0 0 22px rgba(16,185,129,.3);
-    }
-
-    .card-wrap.ready:not(.flipped):not(.matched):hover .card-inner {
-      transform:rotateY(8deg) scale(1.04);
-    }
-
+    .card-back { background:linear-gradient(135deg,rgba(124,58,237,.18),rgba(6,182,212,.10)); }
+    .card-back::after { content:'?'; font-family:'JetBrains Mono',monospace; font-size:1.6rem; font-weight:900; color:rgba(124,58,237,.5); }
+    .card-front { background:linear-gradient(135deg,rgba(124,58,237,.25),rgba(6,182,212,.15)); transform:rotateY(180deg); border-color:rgba(124,58,237,.35); }
+    .card-wrap.matched .card-front { background:linear-gradient(135deg,rgba(16,185,129,.25),rgba(6,182,212,.15)); border-color:rgba(16,185,129,.45); box-shadow:0 0 22px rgba(16,185,129,.3); }
+    .card-wrap.ready:not(.flipped):not(.matched):hover .card-inner { transform:rotateY(8deg) scale(1.04); }
     .card-wrap.shake .card-inner { animation:shake .4s ease; }
     @keyframes shake {
       0%,100% { transform:rotateY(180deg) translateX(0); }
@@ -85,7 +60,7 @@
 
     .actions { display:flex; gap:.75rem; margin-top:1.75rem; }
 
-    /* Countdown */
+    /* ── Countdown ── */
     #countdown-badge {
       position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
       padding:1.5rem 2.5rem; border-radius:18px; text-align:center;
@@ -93,27 +68,49 @@
       display:none; z-index:40;
       animation:pulse-glow 1s ease-in-out infinite alternate;
     }
-    @keyframes pulse-glow {
-      from { box-shadow:0 0 20px rgba(6,182,212,.2); }
-      to   { box-shadow:0 0 50px rgba(6,182,212,.5); }
-    }
+    @keyframes pulse-glow { from { box-shadow:0 0 20px rgba(6,182,212,.2); } to { box-shadow:0 0 50px rgba(6,182,212,.5); } }
     #countdown-label { font-family:'JetBrains Mono',monospace; font-size:.65rem; color:var(--muted); margin-bottom:.2rem; }
-    #countdown       { font-size:3.5rem; font-weight:900; color:#06B6D4; }
+    #countdown { font-size:3.5rem; font-weight:900; color:#06B6D4; }
 
-    /* Win overlay */
-    #win-overlay {
-      position:fixed; inset:0; display:none;
-      align-items:center; justify-content:center; z-index:50;
-    }
+    /* ── Win overlay ── */
+    #win-overlay { position:fixed; inset:0; display:none; align-items:center; justify-content:center; z-index:50; }
     #win-overlay.show { display:flex; }
-    #win-bg  { position:absolute; inset:0; background:rgba(0,0,0,.7); backdrop-filter:blur(8px); }
+    #win-bg { position:absolute; inset:0; background:rgba(0,0,0,.75); backdrop-filter:blur(8px); }
     #win-box {
-      position:relative;
-      padding:2.5rem; border-radius:20px; text-align:center; max-width:320px; margin:1rem;
-      border-color:rgba(124,58,237,.4) !important;
+      position:relative; border-radius:22px; max-width:480px; width:calc(100% - 2rem); margin:1rem;
+      border-color:rgba(124,58,237,.4) !important; overflow:hidden;
     }
-    #win-box h2 { font-size:1.9rem; font-weight:900; margin:.75rem 0 .4rem; }
-    #win-box p  { color:var(--muted); font-size:.85rem; font-family:'JetBrains Mono',monospace; margin-bottom:1.5rem; }
+
+    .win-section { padding:1.8rem 2rem; }
+    .win-section + .win-section { border-top:1px solid rgba(255,255,255,.07); }
+
+    #win-score-display { font-size:3.5rem; font-weight:900; color:#7C3AED; line-height:1; }
+    #win-stats { font-size:.8rem; color:var(--muted); font-family:'JetBrains Mono',monospace; margin-top:.4rem; }
+
+    /* Name form */
+    #name-form { display:flex; gap:.6rem; margin-top:1rem; }
+    #name-input {
+      flex:1; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12);
+      border-radius:10px; padding:.55rem .9rem; color:#fff; font-size:.9rem;
+      font-family:'JetBrains Mono',monospace; outline:none;
+      transition:border-color .2s;
+    }
+    #name-input:focus { border-color:rgba(124,58,237,.6); }
+    #name-input::placeholder { color:rgba(255,255,255,.25); }
+
+    /* Leaderboard */
+    #leaderboard-title { font-weight:800; font-size:.95rem; margin-bottom:.9rem; display:flex; align-items:center; gap:.5rem; }
+    .lb-row { display:flex; align-items:center; gap:.75rem; padding:.45rem 0; border-bottom:1px solid rgba(255,255,255,.05); font-size:.82rem; }
+    .lb-row:last-child { border:none; }
+    .lb-rank { font-family:'JetBrains Mono',monospace; font-size:.7rem; color:var(--muted); width:1.4rem; text-align:center; flex-shrink:0; }
+    .lb-rank.top { color:#F59E0B; font-weight:900; }
+    .lb-name { flex:1; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .lb-score { font-family:'JetBrains Mono',monospace; font-weight:700; color:#7C3AED; flex-shrink:0; }
+    .lb-meta { font-family:'JetBrains Mono',monospace; font-size:.65rem; color:var(--muted); flex-shrink:0; }
+    .lb-empty { color:var(--muted); font-size:.8rem; font-family:'JetBrains Mono',monospace; }
+    #lb-loading { color:var(--muted); font-size:.8rem; font-family:'JetBrains Mono',monospace; }
+
+    .new-entry { background:rgba(124,58,237,.1); border-radius:8px; padding:.45rem .6rem; margin:-.45rem -.6rem; }
   </style>
 </head>
 <body>
@@ -138,6 +135,10 @@
       <div class="stat-label">PAIRS</div>
       <div id="pairs" class="stat-value" style="color:#10B981;">0/8</div>
     </div>
+    <div class="stat">
+      <div class="stat-label">SCORE</div>
+      <div id="score" class="stat-value" style="color:#F59E0B;">—</div>
+    </div>
   </div>
 
   <div id="board"></div>
@@ -152,49 +153,92 @@
     <div id="countdown">10</div>
   </div>
 
-  <!-- Win -->
+  <!-- Win overlay -->
   <div id="win-overlay">
     <div id="win-bg"></div>
     <div id="win-box" class="glass">
-      <div style="font-size:3rem;">🎉</div>
-      <h2>Reality <span class="gradient-text">Restored</span></h2>
-      <p><span id="win-moves" style="color:#06B6D4;"></span> moves · <span id="win-time" style="color:#7C3AED;"></span></p>
-      <button id="win-restart" class="btn btn-primary" style="width:100%;justify-content:center;">Play Again</button>
+
+      <!-- Score section -->
+      <div class="win-section" style="text-align:center;">
+        <div style="font-size:2.2rem;">🎉</div>
+        <div style="font-weight:900;font-size:1.3rem;margin:.3rem 0 .1rem;">Reality <span class="gradient-text">Restored</span></div>
+        <div id="win-score-display">0</div>
+        <div id="win-stats"></div>
+      </div>
+
+      <!-- Name form section -->
+      <div class="win-section" id="submit-section">
+        <div style="font-size:.8rem;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-bottom:.1rem;">SAVE YOUR SCORE</div>
+        <div id="name-form">
+          <input id="name-input" type="text" maxlength="20" placeholder="Enter your name…" autocomplete="off">
+          <button id="submit-score" class="btn btn-primary" style="flex-shrink:0;">Save</button>
+        </div>
+        <div id="submit-msg" style="font-size:.75rem;font-family:'JetBrains Mono',monospace;margin-top:.5rem;min-height:1.1rem;"></div>
+      </div>
+
+      <!-- Leaderboard section -->
+      <div class="win-section">
+        <div id="leaderboard-title">🏆 Top 10 — Memory Glitch</div>
+        <div id="lb-list"><div id="lb-loading">loading…</div></div>
+      </div>
+
+      <!-- Restart -->
+      <div class="win-section" style="padding-top:1rem;padding-bottom:1.2rem;">
+        <button id="win-restart" class="btn btn-secondary" style="width:100%;justify-content:center;">⟳ Play Again</button>
+      </div>
+
     </div>
   </div>
 
   <script>
-    const EMOJIS = ['💻','🔮','⚡','🌐','🎮','🤖','🔬','💀'];
-    const PREVIEW_SEC = 10;
+    const EMOJIS    = ['💻','🔮','⚡','🌐','🎮','🤖','🔬','💀'];
+    const PREVIEW   = 10;
+    const GAME      = 'memory-glitch';
+    const API       = '/api/scores';
 
-    let flipped = [], matched = 0, moves = 0, locked = false;
-    let inPreview = false, startTime = null;
-    let timerInt = null, previewInt = null;
+    let flipped=[], matched=0, moves=0, locked=false;
+    let inPreview=false, startTime=null, elapsedSec=0;
+    let timerInt=null, previewInt=null, finalScore=0;
+    let submittedName = null;
 
     const board      = document.getElementById('board');
     const movesEl    = document.getElementById('moves');
     const timerEl    = document.getElementById('timer');
     const pairsEl    = document.getElementById('pairs');
+    const scoreEl    = document.getElementById('score');
     const cBadge     = document.getElementById('countdown-badge');
     const cEl        = document.getElementById('countdown');
     const winOverlay = document.getElementById('win-overlay');
-    const winMovesEl = document.getElementById('win-moves');
-    const winTimeEl  = document.getElementById('win-time');
+    const winScoreEl = document.getElementById('win-score-display');
+    const winStats   = document.getElementById('win-stats');
+    const submitSec  = document.getElementById('submit-section');
+    const nameInput  = document.getElementById('name-input');
+    const submitBtn  = document.getElementById('submit-score');
+    const submitMsg  = document.getElementById('submit-msg');
+    const lbList     = document.getElementById('lb-list');
 
-    function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5); }
-    function pad(n)       { return String(n).padStart(2,'0'); }
-    function fmtTime(ms)  { const s=Math.floor(ms/1000); return `${pad(Math.floor(s/60))}:${pad(s%60)}`; }
+    function shuffle(a) { return [...a].sort(() => Math.random() - 0.5); }
+    function pad(n)     { return String(n).padStart(2,'0'); }
+    function fmtTime(s) { return `${pad(Math.floor(s/60))}:${pad(s%60)}`; }
+
+    function calcScore(mv, sec) {
+      return Math.max(100, 10000 - Math.max(0, mv - 8) * 80 - sec * 3);
+    }
 
     function startTimer() {
       startTime = Date.now();
-      timerInt = setInterval(() => { timerEl.textContent = fmtTime(Date.now() - startTime); }, 500);
+      timerInt = setInterval(() => {
+        elapsedSec = Math.floor((Date.now() - startTime) / 1000);
+        timerEl.textContent = fmtTime(elapsedSec);
+        scoreEl.textContent = calcScore(moves, elapsedSec);
+      }, 500);
     }
     function stopTimer()   { clearInterval(timerInt); }
     function stopPreview() { clearInterval(previewInt); }
 
     function startPreview() {
-      inPreview = true; locked = true;
-      let rem = PREVIEW_SEC;
+      inPreview=true; locked=true;
+      let rem = PREVIEW;
       cEl.textContent = rem;
       cBadge.style.display = 'block';
       previewInt = setInterval(() => {
@@ -210,70 +254,141 @@
 
     function flipAllDown() {
       const all = Array.from(board.querySelectorAll('.card-wrap'));
-      all.forEach((c, i) => setTimeout(() => c.classList.remove('flipped'), i * 40));
+      all.forEach((c,i) => setTimeout(() => c.classList.remove('flipped'), i*40));
       setTimeout(() => {
-        inPreview = false; locked = false;
+        inPreview=false; locked=false;
         all.forEach(c => c.classList.add('ready'));
-      }, all.length * 40 + 500);
+      }, all.length*40+500);
     }
 
     function init() {
-      board.innerHTML = '';
-      flipped = []; matched = 0; moves = 0; locked = false; inPreview = false; startTime = null;
+      board.innerHTML='';
+      flipped=[]; matched=0; moves=0; locked=false; inPreview=false;
+      startTime=null; elapsedSec=0; finalScore=0; submittedName=null;
       stopTimer(); stopPreview();
-      cBadge.style.display = 'none';
-      movesEl.textContent = '0'; timerEl.textContent = '00:00'; pairsEl.textContent = '0/8';
+      cBadge.style.display='none';
+      movesEl.textContent='0'; timerEl.textContent='00:00';
+      pairsEl.textContent='0/8'; scoreEl.textContent='—';
       winOverlay.classList.remove('show');
+      submitSec.style.display='block';
+      submitMsg.textContent='';
+      nameInput.value='';
 
-      shuffle([...EMOJIS, ...EMOJIS]).forEach(emoji => {
-        const wrap  = document.createElement('div'); wrap.className = 'card-wrap'; wrap.dataset.emoji = emoji;
-        const inner = document.createElement('div'); inner.className = 'card-inner';
-        const back  = document.createElement('div'); back.className  = 'card-face card-back';
-        const front = document.createElement('div'); front.className = 'card-face card-front'; front.textContent = emoji;
-        inner.append(back, front);
-        wrap.appendChild(inner);
-        wrap.addEventListener('click', () => onFlip(wrap));
+      shuffle([...EMOJIS,...EMOJIS]).forEach(emoji => {
+        const wrap=document.createElement('div'); wrap.className='card-wrap'; wrap.dataset.emoji=emoji;
+        const inner=document.createElement('div'); inner.className='card-inner';
+        const back=document.createElement('div');  back.className='card-face card-back';
+        const front=document.createElement('div'); front.className='card-face card-front'; front.textContent=emoji;
+        inner.append(back,front); wrap.appendChild(inner);
+        wrap.addEventListener('click',()=>onFlip(wrap));
         board.appendChild(wrap);
       });
 
-      requestAnimationFrame(() => requestAnimationFrame(() => {
-        const all = board.querySelectorAll('.card-wrap');
-        all.forEach((c, i) => setTimeout(() => c.classList.add('flipped'), i * 40));
-        setTimeout(startPreview, all.length * 40 + 300);
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{
+        const all=board.querySelectorAll('.card-wrap');
+        all.forEach((c,i)=>setTimeout(()=>c.classList.add('flipped'),i*40));
+        setTimeout(startPreview, all.length*40+300);
       }));
     }
 
     function onFlip(card) {
-      if (locked || inPreview || !card.classList.contains('ready')) return;
-      if (card.classList.contains('flipped') || card.classList.contains('matched')) return;
+      if (locked||inPreview||!card.classList.contains('ready')) return;
+      if (card.classList.contains('flipped')||card.classList.contains('matched')) return;
       if (!startTime) startTimer();
 
       card.classList.add('flipped');
       flipped.push(card);
-      if (flipped.length < 2) return;
+      if (flipped.length<2) return;
 
-      moves++; movesEl.textContent = moves; locked = true;
-      const [a, b] = flipped;
-      if (a.dataset.emoji === b.dataset.emoji) {
+      moves++; movesEl.textContent=moves; locked=true;
+      const [a,b]=flipped;
+      if (a.dataset.emoji===b.dataset.emoji) {
         a.classList.add('matched'); b.classList.add('matched');
-        matched++; pairsEl.textContent = `${matched}/8`;
-        flipped = []; locked = false;
-        if (matched === 8) onWin();
+        matched++; pairsEl.textContent=`${matched}/8`;
+        flipped=[]; locked=false;
+        if (matched===8) onWin();
       } else {
         a.classList.add('shake'); b.classList.add('shake');
-        setTimeout(() => {
+        setTimeout(()=>{
           a.classList.remove('flipped','shake');
           b.classList.remove('flipped','shake');
-          flipped = []; locked = false;
-        }, 900);
+          flipped=[]; locked=false;
+        },900);
       }
     }
 
     function onWin() {
       stopTimer();
-      winMovesEl.textContent = moves;
-      winTimeEl.textContent  = fmtTime(Date.now() - startTime);
-      setTimeout(() => winOverlay.classList.add('show'), 400);
+      finalScore = calcScore(moves, elapsedSec);
+      winScoreEl.textContent = finalScore.toLocaleString();
+      winStats.textContent   = `${moves} moves · ${fmtTime(elapsedSec)}`;
+      scoreEl.textContent    = finalScore;
+      setTimeout(()=>{
+        winOverlay.classList.add('show');
+        loadLeaderboard();
+      }, 400);
+    }
+
+    // ── Leaderboard ──────────────────────────────────────────────
+
+    async function loadLeaderboard(highlightName) {
+      lbList.innerHTML = '<div id="lb-loading">loading…</div>';
+      try {
+        const res  = await fetch(`${API}?game=${GAME}`);
+        const data = await res.json();
+        renderLeaderboard(data, highlightName);
+      } catch {
+        lbList.innerHTML = '<div class="lb-empty">Could not load scores.</div>';
+      }
+    }
+
+    function renderLeaderboard(scores, highlightName) {
+      if (!scores.length) {
+        lbList.innerHTML = '<div class="lb-empty">No scores yet — be the first!</div>';
+        return;
+      }
+      const medals = ['🥇','🥈','🥉'];
+      lbList.innerHTML = scores.map((s,i) => {
+        const isNew = highlightName && s.name === highlightName && i === 0;
+        return `
+          <div class="lb-row${isNew ? ' new-entry' : ''}">
+            <span class="lb-rank${i<3?' top':''}">${medals[i]||i+1}</span>
+            <span class="lb-name">${s.name}</span>
+            <span class="lb-meta">${s.moves}mv · ${s.time}</span>
+            <span class="lb-score">${Number(s.score).toLocaleString()}</span>
+          </div>`;
+      }).join('');
+    }
+
+    // ── Submit score ─────────────────────────────────────────────
+
+    submitBtn.addEventListener('click', submitScore);
+    nameInput.addEventListener('keydown', e => { if (e.key==='Enter') submitScore(); });
+
+    async function submitScore() {
+      const name = nameInput.value.trim();
+      if (!name) { submitMsg.textContent = 'Enter your name first.'; return; }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = '…';
+      submitMsg.textContent = '';
+
+      try {
+        const res = await fetch(API, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ game: GAME, name, score: finalScore, moves, time: fmtTime(elapsedSec) }),
+        });
+        if (!res.ok) throw new Error();
+        submittedName = name;
+        submitMsg.textContent = '✓ Saved!';
+        submitSec.style.display = 'none';
+        loadLeaderboard(name);
+      } catch {
+        submitMsg.textContent = '✗ Error saving score. Try again.';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Save';
+      }
     }
 
     document.getElementById('restart').addEventListener('click', init);
