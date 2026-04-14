@@ -1,0 +1,94 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=JetBrains+Mono:wght@400;700;900&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:       #050510;
+  --violet:   #7C3AED;
+  --cyan:     #06B6D4;
+  --amber:    #F59E0B;
+  --emerald:  #10B981;
+  --text:     rgba(255,255,255,0.85);
+  --muted:    rgba(255,255,255,0.40);
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  min-height: 100vh;
+}
+
+/* ── Typography ── */
+.mono { font-family: 'JetBrains Mono', monospace; }
+
+.gradient-text {
+  background: linear-gradient(135deg, var(--violet), var(--cyan));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  padding: .3rem .75rem;
+  border-radius: 999px;
+  border: 1px solid rgba(124,58,237,.35);
+  color: rgba(124,58,237,.85);
+  background: rgba(124,58,237,.08);
+}
+
+/* ── Glass ── */
+.glass {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  backdrop-filter: blur(12px);
+}
+
+/* ── Buttons ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .6rem 1.25rem;
+  border-radius: 10px;
+  font-size: .85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .2s;
+  text-decoration: none;
+  border: none;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--violet), #9333ea);
+  color: #fff;
+  box-shadow: 0 4px 20px rgba(124,58,237,.35);
+}
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 28px rgba(124,58,237,.5); }
+
+.btn-secondary {
+  background: rgba(255,255,255,.05);
+  color: var(--text);
+  border: 1px solid rgba(255,255,255,.12);
+}
+.btn-secondary:hover { background: rgba(255,255,255,.09); }
+
+/* ── Stat pill ── */
+.stat {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: .4rem 1rem;
+  text-align: center;
+}
+.stat-label { font-family: 'JetBrains Mono', monospace; font-size: .65rem; color: var(--muted); }
+.stat-value { font-weight: 700; font-size: 1.1rem; }

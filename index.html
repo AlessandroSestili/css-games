@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CSS Games — Alessandro Sestili</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <style>
+    body { display: flex; flex-direction: column; align-items: center; padding: 5rem 1.5rem 4rem; }
+
+    header { text-align: center; margin-bottom: 3.5rem; }
+    header a { font-family: 'JetBrains Mono', monospace; font-size: .75rem; color: var(--muted); text-decoration: none; display: inline-block; margin-bottom: 1.2rem; transition: color .2s; }
+    header a:hover { color: var(--text); }
+    header h1 { font-size: clamp(2.2rem, 6vw, 3.5rem); font-weight: 900; margin-top: .5rem; }
+    header p  { color: var(--muted); font-size: .85rem; margin-top: .6rem; font-family: 'JetBrains Mono', monospace; }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.25rem; width: 100%; max-width: 900px; }
+
+    .game-card {
+      border-radius: 18px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: transform .2s, box-shadow .2s;
+      text-decoration: none;
+      color: inherit;
+    }
+    .game-card:hover { transform: translateY(-4px); }
+
+    .card-thumb {
+      height: 160px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3.5rem;
+      letter-spacing: .4rem;
+    }
+
+    .card-body { padding: 1.1rem 1.2rem 1.3rem; flex: 1; display: flex; flex-direction: column; gap: .4rem; }
+    .card-title { font-size: 1.05rem; font-weight: 800; color: #fff; }
+    .card-desc  { font-size: .8rem; color: var(--muted); line-height: 1.5; flex: 1; }
+
+    .card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: .6rem; }
+    .tag { font-family: 'JetBrains Mono', monospace; font-size: .65rem; padding: .2rem .55rem; border-radius: 999px; }
+
+    /* ── Coming soon card ── */
+    .coming-soon {
+      opacity: .45;
+      cursor: default;
+      pointer-events: none;
+    }
+    .coming-soon .card-thumb { filter: grayscale(1); }
+
+    footer { margin-top: 4rem; font-family: 'JetBrains Mono', monospace; font-size: .7rem; color: var(--muted); }
+    footer a { color: var(--muted); text-decoration: none; }
+    footer a:hover { color: var(--text); }
+  </style>
+</head>
+<body>
+
+  <header>
+    <a href="https://alessandrosestili.dev">← back to portfolio</a>
+    <div><span class="badge">// css_games.exe</span></div>
+    <h1>CSS <span class="gradient-text">Games</span></h1>
+    <p>Browser games built with CSS-first techniques</p>
+  </header>
+
+  <div class="grid">
+
+    <!-- Memory Glitch -->
+    <a href="games/memory-glitch/" class="game-card glass" style="border-color:rgba(124,58,237,.25); box-shadow:0 4px 30px rgba(124,58,237,.1);">
+      <div class="card-thumb" style="background:linear-gradient(135deg,rgba(124,58,237,.18),rgba(6,182,212,.1));">
+        💻 🔮 ⚡ 🎮
+      </div>
+      <div class="card-body">
+        <div class="card-title">Memory Glitch</div>
+        <div class="card-desc">Match all pairs before reality collapses. CSS 3D card flip, countdown preview, neon theme.</div>
+        <div class="card-footer">
+          <span class="tag" style="background:rgba(16,185,129,.15);color:#10B981;border:1px solid rgba(16,185,129,.3);">● Live</span>
+          <span style="font-size:.75rem;color:var(--muted);font-family:'JetBrains Mono',monospace;">CSS 3D · JS</span>
+        </div>
+      </div>
+    </a>
+
+    <!-- Placeholder -->
+    <div class="game-card glass coming-soon" style="border-color:rgba(255,255,255,.06);">
+      <div class="card-thumb" style="background:rgba(255,255,255,.03);">
+        ✦ ✦ ✦
+      </div>
+      <div class="card-body">
+        <div class="card-title">Coming Soon</div>
+        <div class="card-desc">More CSS experiments on the way.</div>
+        <div class="card-footer">
+          <span class="tag" style="background:rgba(255,255,255,.06);color:var(--muted);border:1px solid rgba(255,255,255,.1);">WIP</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>
+    <a href="https://github.com/AlessandroSestili/css-games" target="_blank">GitHub</a>
+    &nbsp;·&nbsp;
+    made by <a href="https://alessandrosestili.dev">Alessandro Sestili</a>
+  </footer>
+
+</body>
+</html>

@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Memory Glitch — CSS Games</title>
+  <link rel="stylesheet" href="../../assets/style.css">
+  <style>
+    body { display: flex; flex-direction: column; align-items: center; padding: 4rem 1rem 3rem; }
+
+    header { text-align: center; margin-bottom: 2rem; }
+    header a { font-family:'JetBrains Mono',monospace; font-size:.75rem; color:var(--muted); text-decoration:none; display:inline-block; margin-bottom:1rem; transition:color .2s; }
+    header a:hover { color:var(--text); }
+    header h1 { font-size:clamp(2rem,5vw,3rem); font-weight:900; margin-top:.4rem; }
+    header p  { color:var(--muted); font-size:.8rem; margin-top:.4rem; font-family:'JetBrains Mono',monospace; }
+
+    .stats { display:flex; gap:1rem; margin-bottom:1.75rem; }
+
+    #board {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      width: 100%;
+      max-width: 600px;
+    }
+
+    .card-wrap {
+      aspect-ratio: 1;
+      perspective: 800px;
+      cursor: not-allowed;
+    }
+    .card-wrap.ready { cursor: pointer; }
+
+    .card-inner {
+      width:100%; height:100%;
+      position:relative;
+      transform-style:preserve-3d;
+      transition:transform .5s cubic-bezier(.4,0,.2,1);
+    }
+
+    .card-wrap.flipped .card-inner,
+    .card-wrap.matched .card-inner { transform:rotateY(180deg); }
+
+    .card-face {
+      position:absolute; inset:0;
+      backface-visibility:hidden;
+      border-radius:14px;
+      display:flex; align-items:center; justify-content:center;
+      font-size:clamp(2rem,5.5vw,2.6rem);
+      border:1px solid rgba(255,255,255,.07);
+    }
+
+    .card-back {
+      background:linear-gradient(135deg,rgba(124,58,237,.18),rgba(6,182,212,.10));
+    }
+    .card-back::after {
+      content:'?';
+      font-family:'JetBrains Mono',monospace;
+      font-size:1.6rem; font-weight:900;
+      color:rgba(124,58,237,.5);
+    }
+
+    .card-front {
+      background:linear-gradient(135deg,rgba(124,58,237,.25),rgba(6,182,212,.15));
+      transform:rotateY(180deg);
+      border-color:rgba(124,58,237,.35);
+    }
+
+    .card-wrap.matched .card-front {
+      background:linear-gradient(135deg,rgba(16,185,129,.25),rgba(6,182,212,.15));
+      border-color:rgba(16,185,129,.45);
+      box-shadow:0 0 22px rgba(16,185,129,.3);
+    }
+
+    .card-wrap.ready:not(.flipped):not(.matched):hover .card-inner {
+      transform:rotateY(8deg) scale(1.04);
+    }
+
+    .card-wrap.shake .card-inner { animation:shake .4s ease; }
+    @keyframes shake {
+      0%,100% { transform:rotateY(180deg) translateX(0); }
+      25%      { transform:rotateY(180deg) translateX(-7px); }
+      75%      { transform:rotateY(180deg) translateX(7px); }
+    }
+
+    .actions { display:flex; gap:.75rem; margin-top:1.75rem; }
+
+    /* Countdown */
+    #countdown-badge {
+      position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+      padding:1.5rem 2.5rem; border-radius:18px; text-align:center;
+      border-color:rgba(6,182,212,.4) !important;
+      display:none; z-index:40;
+      animation:pulse-glow 1s ease-in-out infinite alternate;
+    }
+    @keyframes pulse-glow {
+      from { box-shadow:0 0 20px rgba(6,182,212,.2); }
+      to   { box-shadow:0 0 50px rgba(6,182,212,.5); }
+    }
+    #countdown-label { font-family:'JetBrains Mono',monospace; font-size:.65rem; color:var(--muted); margin-bottom:.2rem; }
+    #countdown       { font-size:3.5rem; font-weight:900; color:#06B6D4; }
+
+    /* Win overlay */
+    #win-overlay {
+      position:fixed; inset:0; display:none;
+      align-items:center; justify-content:center; z-index:50;
+    }
+    #win-overlay.show { display:flex; }
+    #win-bg  { position:absolute; inset:0; background:rgba(0,0,0,.7); backdrop-filter:blur(8px); }
+    #win-box {
+      position:relative;
+      padding:2.5rem; border-radius:20px; text-align:center; max-width:320px; margin:1rem;
+      border-color:rgba(124,58,237,.4) !important;
+    }
+    #win-box h2 { font-size:1.9rem; font-weight:900; margin:.75rem 0 .4rem; }
+    #win-box p  { color:var(--muted); font-size:.85rem; font-family:'JetBrains Mono',monospace; margin-bottom:1.5rem; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <a href="../../">← all games</a>
+    <div><span class="badge">// memory_glitch.exe</span></div>
+    <h1>Memory <span class="gradient-text">Glitch</span></h1>
+    <p>Match all pairs before reality collapses</p>
+  </header>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-label">MOVES</div>
+      <div id="moves" class="stat-value" style="color:#06B6D4;">0</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">TIME</div>
+      <div id="timer" class="stat-value" style="color:#7C3AED;">00:00</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">PAIRS</div>
+      <div id="pairs" class="stat-value" style="color:#10B981;">0/8</div>
+    </div>
+  </div>
+
+  <div id="board"></div>
+
+  <div class="actions">
+    <button id="restart" class="btn btn-secondary">⟳ Restart</button>
+  </div>
+
+  <!-- Countdown -->
+  <div id="countdown-badge" class="glass">
+    <div id="countdown-label">MEMORIZE</div>
+    <div id="countdown">10</div>
+  </div>
+
+  <!-- Win -->
+  <div id="win-overlay">
+    <div id="win-bg"></div>
+    <div id="win-box" class="glass">
+      <div style="font-size:3rem;">🎉</div>
+      <h2>Reality <span class="gradient-text">Restored</span></h2>
+      <p><span id="win-moves" style="color:#06B6D4;"></span> moves · <span id="win-time" style="color:#7C3AED;"></span></p>
+      <button id="win-restart" class="btn btn-primary" style="width:100%;justify-content:center;">Play Again</button>
+    </div>
+  </div>
+
+  <script>
+    const EMOJIS = ['💻','🔮','⚡','🌐','🎮','🤖','🔬','💀'];
+    const PREVIEW_SEC = 10;
+
+    let flipped = [], matched = 0, moves = 0, locked = false;
+    let inPreview = false, startTime = null;
+    let timerInt = null, previewInt = null;
+
+    const board      = document.getElementById('board');
+    const movesEl    = document.getElementById('moves');
+    const timerEl    = document.getElementById('timer');
+    const pairsEl    = document.getElementById('pairs');
+    const cBadge     = document.getElementById('countdown-badge');
+    const cEl        = document.getElementById('countdown');
+    const winOverlay = document.getElementById('win-overlay');
+    const winMovesEl = document.getElementById('win-moves');
+    const winTimeEl  = document.getElementById('win-time');
+
+    function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5); }
+    function pad(n)       { return String(n).padStart(2,'0'); }
+    function fmtTime(ms)  { const s=Math.floor(ms/1000); return `${pad(Math.floor(s/60))}:${pad(s%60)}`; }
+
+    function startTimer() {
+      startTime = Date.now();
+      timerInt = setInterval(() => { timerEl.textContent = fmtTime(Date.now() - startTime); }, 500);
+    }
+    function stopTimer()   { clearInterval(timerInt); }
+    function stopPreview() { clearInterval(previewInt); }
+
+    function startPreview() {
+      inPreview = true; locked = true;
+      let rem = PREVIEW_SEC;
+      cEl.textContent = rem;
+      cBadge.style.display = 'block';
+      previewInt = setInterval(() => {
+        rem--;
+        cEl.textContent = rem;
+        if (rem <= 0) {
+          stopPreview();
+          cBadge.style.display = 'none';
+          flipAllDown();
+        }
+      }, 1000);
+    }
+
+    function flipAllDown() {
+      const all = Array.from(board.querySelectorAll('.card-wrap'));
+      all.forEach((c, i) => setTimeout(() => c.classList.remove('flipped'), i * 40));
+      setTimeout(() => {
+        inPreview = false; locked = false;
+        all.forEach(c => c.classList.add('ready'));
+      }, all.length * 40 + 500);
+    }
+
+    function init() {
+      board.innerHTML = '';
+      flipped = []; matched = 0; moves = 0; locked = false; inPreview = false; startTime = null;
+      stopTimer(); stopPreview();
+      cBadge.style.display = 'none';
+      movesEl.textContent = '0'; timerEl.textContent = '00:00'; pairsEl.textContent = '0/8';
+      winOverlay.classList.remove('show');
+
+      shuffle([...EMOJIS, ...EMOJIS]).forEach(emoji => {
+        const wrap  = document.createElement('div'); wrap.className = 'card-wrap'; wrap.dataset.emoji = emoji;
+        const inner = document.createElement('div'); inner.className = 'card-inner';
+        const back  = document.createElement('div'); back.className  = 'card-face card-back';
+        const front = document.createElement('div'); front.className = 'card-face card-front'; front.textContent = emoji;
+        inner.append(back, front);
+        wrap.appendChild(inner);
+        wrap.addEventListener('click', () => onFlip(wrap));
+        board.appendChild(wrap);
+      });
+
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        const all = board.querySelectorAll('.card-wrap');
+        all.forEach((c, i) => setTimeout(() => c.classList.add('flipped'), i * 40));
+        setTimeout(startPreview, all.length * 40 + 300);
+      }));
+    }
+
+    function onFlip(card) {
+      if (locked || inPreview || !card.classList.contains('ready')) return;
+      if (card.classList.contains('flipped') || card.classList.contains('matched')) return;
+      if (!startTime) startTimer();
+
+      card.classList.add('flipped');
+      flipped.push(card);
+      if (flipped.length < 2) return;
+
+      moves++; movesEl.textContent = moves; locked = true;
+      const [a, b] = flipped;
+      if (a.dataset.emoji === b.dataset.emoji) {
+        a.classList.add('matched'); b.classList.add('matched');
+        matched++; pairsEl.textContent = `${matched}/8`;
+        flipped = []; locked = false;
+        if (matched === 8) onWin();
+      } else {
+        a.classList.add('shake'); b.classList.add('shake');
+        setTimeout(() => {
+          a.classList.remove('flipped','shake');
+          b.classList.remove('flipped','shake');
+          flipped = []; locked = false;
+        }, 900);
+      }
+    }
+
+    function onWin() {
+      stopTimer();
+      winMovesEl.textContent = moves;
+      winTimeEl.textContent  = fmtTime(Date.now() - startTime);
+      setTimeout(() => winOverlay.classList.add('show'), 400);
+    }
+
+    document.getElementById('restart').addEventListener('click', init);
+    document.getElementById('win-restart').addEventListener('click', init);
+    init();
+  </script>
+</body>
+</html>
