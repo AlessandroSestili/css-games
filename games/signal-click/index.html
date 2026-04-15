@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Signal Click — CSS Games</title>
+  <link rel="stylesheet" href="../../assets/style.css">
+  <style>
+    body { display:flex; flex-direction:column; align-items:center; padding:4rem 1rem 3rem; user-select:none; }
+
+    header { text-align:center; margin-bottom:2rem; }
+    header a { font-family:'JetBrains Mono',monospace; font-size:.75rem; color:var(--muted); text-decoration:none; display:inline-block; margin-bottom:1rem; transition:color .2s; }
+    header a:hover { color:var(--text); }
+    header h1 { font-size:clamp(2rem,5vw,3rem); font-weight:900; margin-top:.4rem; }
+    header p  { color:var(--muted); font-size:.8rem; margin-top:.4rem; font-family:'JetBrains Mono',monospace; }
+
+    .stats { display:flex; gap:1rem; margin-bottom:1.5rem; flex-wrap:wrap; justify-content:center; }
+
+    /* ── Arena ── */
+    #arena {
+      position:relative;
+      width:100%;
+      max-width:600px;
+      height:380px;
+      border-radius:18px;
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(255,255,255,.02);
+      overflow:hidden;
+      cursor:crosshair;
+    }
+
+    #arena.idle    { cursor:default; }
+    #arena.penalty { animation:miss-flash .25s ease; }
+
+    @keyframes miss-flash {
+      0%,100% { background:rgba(255,255,255,.02); }
+      50%      { background:rgba(239,68,68,.12); }
+    }
+
+    /* ── Target ── */
+    #target {
+      position:absolute;
+      width:80px;
+      height:80px;
+      border-radius:50%;
+      cursor:pointer;
+      display:none;
+      transform:translate(-50%,-50%);
+      animation:pop-in .12s cubic-bezier(.175,.885,.32,1.275) forwards;
+    }
+
+    #target.visible { display:block; }
+
+    @keyframes pop-in {
+      from { transform:translate(-50%,-50%) scale(0); opacity:0; }
+      to   { transform:translate(-50%,-50%) scale(1); opacity:1; }
+    }
+
+    @keyframes pop-out {
+      from { transform:translate(-50%,-50%) scale(1); opacity:1; }
+      to   { transform:translate(-50%,-50%) scale(1.4); opacity:0; }
+    }
+
+    #target.hit { animation:pop-out .15s ease forwards; }
+
+    /* cycle through neon colors */
+    #target.c0 { background:radial-gradient(circle at 35% 35%, rgba(124,58,237,.9), rgba(124,58,237,.4)); box-shadow:0 0 28px rgba(124,58,237,.7), inset 0 0 20px rgba(255,255,255,.15); border:2px solid rgba(124,58,237,.6); }
+    #target.c1 { background:radial-gradient(circle at 35% 35%, rgba(6,182,212,.9),   rgba(6,182,212,.4));   box-shadow:0 0 28px rgba(6,182,212,.7),   inset 0 0 20px rgba(255,255,255,.15); border:2px solid rgba(6,182,212,.6); }
+    #target.c2 { background:radial-gradient(circle at 35% 35%, rgba(245,158,11,.9),  rgba(245,158,11,.4));  box-shadow:0 0 28px rgba(245,158,11,.7),  inset 0 0 20px rgba(255,255,255,.15); border:2px solid rgba(245,158,11,.6); }
+    #target.c3 { background:radial-gradient(circle at 35% 35%, rgba(16,185,129,.9),  rgba(16,185,129,.4));  box-shadow:0 0 28px rgba(16,185,129,.7),  inset 0 0 20px rgba(255,255,255,.15); border:2px solid rgba(16,185,129,.6); }
+
+    /* ── Countdown ring overlay ── */
+    #start-overlay {
+      position:absolute; inset:0;
+      display:flex; align-items:center; justify-content:center;
+      flex-direction:column; gap:.5rem;
+      background:rgba(5,5,16,.7); backdrop-filter:blur(4px);
+      border-radius:17px;
+      transition:opacity .3s;
+    }
+    #start-overlay.hidden { opacity:0; pointer-events:none; }
+    #start-label { font-family:'JetBrains Mono',monospace; font-size:.75rem; color:var(--muted); }
+    #start-count { font-size:4rem; font-weight:900; color:#06B6D4; line-height:1; }
+
+    /* ── Ripple effect ── */
+    .ripple {
+      position:absolute;
+      border-radius:50%;
+      width:80px; height:80px;
+      transform:translate(-50%,-50%) scale(0);
+      border:2px solid rgba(255,255,255,.4);
+      animation:ripple-out .4s ease-out forwards;
+      pointer-events:none;
+    }
+    @keyframes ripple-out {
+      to { transform:translate(-50%,-50%) scale(2.2); opacity:0; }
+    }
+
+    /* ── Miss indicator ── */
+    .miss-dot {
+      position:absolute;
+      width:8px; height:8px;
+      border-radius:50%;
+      background:rgba(239,68,68,.7);
+      transform:translate(-50%,-50%);
+      animation:miss-fade .5s ease forwards;
+      pointer-events:none;
+    }
+    @keyframes miss-fade { to { transform:translate(-50%,-50%) scale(2); opacity:0; } }
+
+    .actions { display:flex; gap:.75rem; margin-top:1.25rem; }
+
+    /* ── Game-over overlay ── */
+    #over-overlay { position:fixed; inset:0; display:none; align-items:center; justify-content:center; z-index:50; }
+    #over-overlay.show { display:flex; }
+    #over-bg { position:absolute; inset:0; background:rgba(0,0,0,.75); backdrop-filter:blur(8px); }
+    #over-box {
+      position:relative; border-radius:22px; max-width:480px; width:calc(100% - 2rem); margin:1rem;
+      border-color:rgba(6,182,212,.4) !important; overflow:hidden;
+    }
+
+    .over-section { padding:1.8rem 2rem; }
+    .over-section + .over-section { border-top:1px solid rgba(255,255,255,.07); }
+
+    #over-score-display { font-size:3.5rem; font-weight:900; color:#06B6D4; line-height:1; }
+    #over-stats { font-size:.8rem; color:var(--muted); font-family:'JetBrains Mono',monospace; margin-top:.4rem; }
+
+    #name-form { display:flex; gap:.6rem; margin-top:1rem; }
+    #name-input {
+      flex:1; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12);
+      border-radius:10px; padding:.55rem .9rem; color:#fff; font-size:.9rem;
+      font-family:'JetBrains Mono',monospace; outline:none; transition:border-color .2s;
+    }
+    #name-input:focus { border-color:rgba(6,182,212,.6); }
+    #name-input::placeholder { color:rgba(255,255,255,.25); }
+
+    #leaderboard-title { font-weight:800; font-size:.95rem; margin-bottom:.9rem; display:flex; align-items:center; gap:.5rem; }
+    .lb-row { display:flex; align-items:center; gap:.75rem; padding:.45rem 0; border-bottom:1px solid rgba(255,255,255,.05); font-size:.82rem; }
+    .lb-row:last-child { border:none; }
+    .lb-rank { font-family:'JetBrains Mono',monospace; font-size:.7rem; color:var(--muted); width:1.4rem; text-align:center; flex-shrink:0; }
+    .lb-rank.top { color:#F59E0B; font-weight:900; }
+    .lb-name  { flex:1; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .lb-score { font-family:'JetBrains Mono',monospace; font-weight:700; color:#06B6D4; flex-shrink:0; }
+    .lb-meta  { font-family:'JetBrains Mono',monospace; font-size:.65rem; color:var(--muted); flex-shrink:0; }
+    .lb-empty { color:var(--muted); font-size:.8rem; font-family:'JetBrains Mono',monospace; }
+    .new-entry { background:rgba(6,182,212,.08); border-radius:8px; padding:.45rem .6rem; margin:-.45rem -.6rem; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <a href="../../">← all games</a>
+    <div><span class="badge">// signal_click.exe</span></div>
+    <h1>Signal <span class="gradient-text">Click</span></h1>
+    <p>Hit every target. Miss and you lose a point.</p>
+  </header>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-label">SCORE</div>
+      <div id="score" class="stat-value" style="color:#06B6D4;">0</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">MISSES</div>
+      <div id="misses" class="stat-value" style="color:#EF4444;">0</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">TIME</div>
+      <div id="timer" class="stat-value" style="color:#7C3AED;">30</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">BEST</div>
+      <div id="best" class="stat-value" style="color:#F59E0B;">—</div>
+    </div>
+  </div>
+
+  <div id="arena" class="idle">
+    <div id="target"></div>
+
+    <div id="start-overlay">
+      <div id="start-label">GET READY</div>
+      <div id="start-count">—</div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button id="start-btn"   class="btn btn-primary">▶ Start</button>
+    <button id="restart-btn" class="btn btn-secondary" style="display:none;">⟳ Restart</button>
+  </div>
+
+  <!-- Game-over overlay -->
+  <div id="over-overlay">
+    <div id="over-bg"></div>
+    <div id="over-box" class="glass">
+
+      <div class="over-section" style="text-align:center;">
+        <div style="font-size:2.2rem;">🎯</div>
+        <div style="font-weight:900;font-size:1.3rem;margin:.3rem 0 .1rem;">Time's <span class="gradient-text">Up</span></div>
+        <div id="over-score-display">0</div>
+        <div id="over-stats"></div>
+      </div>
+
+      <div class="over-section" id="submit-section">
+        <div style="font-size:.8rem;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-bottom:.1rem;">SAVE YOUR SCORE</div>
+        <div id="name-form">
+          <input id="name-input" type="text" maxlength="20" placeholder="Enter your name…" autocomplete="off">
+          <button id="submit-score" class="btn btn-primary" style="flex-shrink:0;">Save</button>
+        </div>
+        <div id="submit-msg" style="font-size:.75rem;font-family:'JetBrains Mono',monospace;margin-top:.5rem;min-height:1.1rem;"></div>
+      </div>
+
+      <div class="over-section">
+        <div id="leaderboard-title">🏆 Top 10 — Signal Click</div>
+        <div id="lb-list"><div style="color:var(--muted);font-size:.8rem;font-family:'JetBrains Mono',monospace;">loading…</div></div>
+      </div>
+
+      <div class="over-section" style="padding-top:1rem;padding-bottom:1.2rem;">
+        <button id="over-restart" class="btn btn-secondary" style="width:100%;justify-content:center;">⟳ Play Again</button>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    const GAME      = 'signal-click';
+    const API       = '/api/scores';
+    const DURATION  = 30;
+    const TARGET_R  = 40; // half of 80px
+    const COLORS    = ['c0','c1','c2','c3'];
+
+    let score        = 0;
+    let misses       = 0;
+    let timeLeft     = DURATION;
+    let phase        = 'idle'; // idle | countdown | playing | over
+    let gameInterval = null;
+    let colorIndex   = 0;
+    let finalScore   = 0;
+    let bestScore    = 0;
+    let submittedName = null;
+
+    const arena      = document.getElementById('arena');
+    const target     = document.getElementById('target');
+    const scoreEl    = document.getElementById('score');
+    const missesEl   = document.getElementById('misses');
+    const timerEl    = document.getElementById('timer');
+    const bestEl     = document.getElementById('best');
+    const startBtn   = document.getElementById('start-btn');
+    const restartBtn = document.getElementById('restart-btn');
+    const overlay    = document.getElementById('start-overlay');
+    const countEl    = document.getElementById('start-count');
+    const overOverlay = document.getElementById('over-overlay');
+    const overScoreEl = document.getElementById('over-score-display');
+    const overStats   = document.getElementById('over-stats');
+    const submitSec   = document.getElementById('submit-section');
+    const nameInput   = document.getElementById('name-input');
+    const submitBtn   = document.getElementById('submit-score');
+    const submitMsg   = document.getElementById('submit-msg');
+    const lbList      = document.getElementById('lb-list');
+
+    // ── target positioning ────────────────────────────────────────
+
+    function placeTarget() {
+      const rect = arena.getBoundingClientRect();
+      const pad  = TARGET_R + 8;
+      const x = pad + Math.random() * (rect.width  - pad * 2);
+      const y = pad + Math.random() * (rect.height - pad * 2);
+
+      target.className = '';
+      target.classList.add('visible', COLORS[colorIndex % COLORS.length]);
+      colorIndex++;
+      target.style.left = x + 'px';
+      target.style.top  = y + 'px';
+    }
+
+    function spawnRipple(x, y) {
+      const r = document.createElement('div');
+      r.className = 'ripple';
+      r.style.left = x + 'px';
+      r.style.top  = y + 'px';
+      arena.appendChild(r);
+      setTimeout(() => r.remove(), 400);
+    }
+
+    function spawnMissDot(x, y) {
+      const d = document.createElement('div');
+      d.className = 'miss-dot';
+      d.style.left = x + 'px';
+      d.style.top  = y + 'px';
+      arena.appendChild(d);
+      setTimeout(() => d.remove(), 500);
+    }
+
+    // ── game flow ─────────────────────────────────────────────────
+
+    function startGame() {
+      score    = 0; misses = 0; timeLeft = DURATION;
+      colorIndex = 0; submittedName = null; finalScore = 0;
+      phase    = 'countdown';
+
+      scoreEl.textContent  = '0';
+      missesEl.textContent = '0';
+      timerEl.textContent  = DURATION;
+      overOverlay.classList.remove('show');
+      submitSec.style.display = 'block';
+      submitMsg.textContent   = '';
+      nameInput.value         = '';
+      startBtn.style.display  = 'none';
+      restartBtn.style.display = 'inline-flex';
+      target.className        = '';
+      arena.classList.remove('idle');
+
+      // 3-2-1 countdown
+      overlay.classList.remove('hidden');
+      let cd = 3;
+      countEl.textContent = cd;
+      const cdInt = setInterval(() => {
+        cd--;
+        if (cd <= 0) {
+          clearInterval(cdInt);
+          overlay.classList.add('hidden');
+          beginPlay();
+        } else {
+          countEl.textContent = cd;
+        }
+      }, 1000);
+    }
+
+    function beginPlay() {
+      phase = 'playing';
+      placeTarget();
+
+      gameInterval = setInterval(() => {
+        timeLeft--;
+        timerEl.textContent = timeLeft;
+        if (timeLeft <= 0) endGame();
+      }, 1000);
+    }
+
+    function endGame() {
+      clearInterval(gameInterval);
+      phase = 'over';
+      target.className = '';
+      finalScore = Math.max(0, score);
+
+      if (finalScore > bestScore) {
+        bestScore = finalScore;
+        bestEl.textContent = bestScore;
+      }
+
+      setTimeout(() => {
+        overScoreEl.textContent = finalScore;
+        overStats.textContent   = `${score} hits · ${misses} misses · net ${finalScore}`;
+        overOverlay.classList.add('show');
+        loadLeaderboard();
+      }, 300);
+    }
+
+    // ── input handling ────────────────────────────────────────────
+
+    target.addEventListener('click', e => {
+      if (phase !== 'playing') return;
+      e.stopPropagation();
+
+      // hit
+      score++;
+      scoreEl.textContent = score;
+
+      const rect = arena.getBoundingClientRect();
+      spawnRipple(
+        parseFloat(target.style.left),
+        parseFloat(target.style.top)
+      );
+
+      target.classList.add('hit');
+      setTimeout(() => placeTarget(), 150);
+    });
+
+    arena.addEventListener('click', e => {
+      if (phase !== 'playing') return;
+
+      // miss
+      misses++;
+      score = Math.max(0, score - 1);
+      scoreEl.textContent  = score;
+      missesEl.textContent = misses;
+
+      const rect = arena.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      spawnMissDot(x, y);
+
+      arena.classList.add('penalty');
+      setTimeout(() => arena.classList.remove('penalty'), 250);
+    });
+
+    startBtn.addEventListener('click', startGame);
+    restartBtn.addEventListener('click', startGame);
+    document.getElementById('over-restart').addEventListener('click', startGame);
+
+    // ── leaderboard ───────────────────────────────────────────────
+
+    async function loadLeaderboard(highlightName) {
+      lbList.innerHTML = '<div style="color:var(--muted);font-size:.8rem;font-family:\'JetBrains Mono\',monospace;">loading…</div>';
+      try {
+        const res  = await fetch(`${API}?game=${GAME}`);
+        const data = await res.json();
+        renderLeaderboard(data, highlightName);
+      } catch {
+        lbList.innerHTML = '<div class="lb-empty">Could not load scores.</div>';
+      }
+    }
+
+    function renderLeaderboard(scores, highlightName) {
+      if (!scores.length) {
+        lbList.innerHTML = '<div class="lb-empty">No scores yet — be the first!</div>';
+        return;
+      }
+      const medals = ['🥇','🥈','🥉'];
+      lbList.innerHTML = scores.map((s, i) => {
+        const isNew = highlightName && s.name === highlightName && i === 0;
+        return `
+          <div class="lb-row${isNew ? ' new-entry' : ''}">
+            <span class="lb-rank${i < 3 ? ' top' : ''}">${medals[i] || i + 1}</span>
+            <span class="lb-name">${s.name}</span>
+            <span class="lb-meta">${s.moves} hits</span>
+            <span class="lb-score">${Number(s.score).toLocaleString()}</span>
+          </div>`;
+      }).join('');
+    }
+
+    // ── submit ────────────────────────────────────────────────────
+
+    submitBtn.addEventListener('click', submitScore);
+    nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') submitScore(); });
+
+    async function submitScore() {
+      const name = nameInput.value.trim();
+      if (!name) { submitMsg.textContent = 'Enter your name first.'; return; }
+
+      submitBtn.disabled    = true;
+      submitBtn.textContent = '…';
+      submitMsg.textContent = '';
+
+      try {
+        const res = await fetch(API, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            game:  GAME,
+            name,
+            score: finalScore,
+            moves: score,
+            time:  `${score} hits`,
+          }),
+        });
+        if (!res.ok) throw new Error();
+        submittedName         = name;
+        submitMsg.textContent = '✓ Saved!';
+        submitSec.style.display = 'none';
+        loadLeaderboard(name);
+      } catch {
+        submitMsg.textContent = '✗ Error saving score. Try again.';
+        submitBtn.disabled    = false;
+        submitBtn.textContent = 'Save';
+      }
+    }
+  </script>
+</body>
+</html>
