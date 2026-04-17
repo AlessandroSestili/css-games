@@ -1,20 +1,6 @@
-# CLAUDE.md
+# css-games
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+No build step. Open `index.html` in browser. Leaderboard API locally: `vercel dev`
 
-## Commands
-
-No build step. Open `index.html` directly in browser.
-
-```bash
-# Check leaderboard API locally via Vercel CLI:
-vercel dev
-```
-
-## Architecture
-
-Static HTML/CSS/JS — no framework, no bundler.
-
-`api/` directory contains Vercel serverless functions (Node.js) for leaderboard persistence via `@vercel/kv`.
-
-When testing: open DevTools Console for JS errors, Network tab to verify leaderboard API calls.
+Static HTML/CSS/JS. `api/` = Vercel serverless functions (Node.js) via `@vercel/kv`.
+Test: DevTools Console + Network tab.
